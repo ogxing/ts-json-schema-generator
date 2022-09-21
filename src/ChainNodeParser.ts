@@ -5,6 +5,7 @@ import { Context } from "./NodeParser";
 import { SubNodeParser } from "./SubNodeParser";
 import { BaseType } from "./Type/BaseType";
 import { ReferenceType } from "./Type/ReferenceType";
+import { UndefinedType } from "./Type/UndefinedType";
 
 export class ChainNodeParser implements SubNodeParser, MutableParser {
     protected readonly typeCaches = new WeakMap<ts.Node, Map<string, BaseType>>();
@@ -21,20 +22,24 @@ export class ChainNodeParser implements SubNodeParser, MutableParser {
     }
 
     public createType(node: ts.Node, context: Context, reference?: ReferenceType): BaseType {
-        let typeCache = this.typeCaches.get(node);
-        if (typeCache == null) {
-            typeCache = new Map<string, BaseType>();
-            this.typeCaches.set(node, typeCache);
-        }
-        const contextCacheKey = context.getCacheKey();
-        let type = typeCache.get(contextCacheKey);
-        if (!type) {
-            type = this.getNodeParser(node, context).createType(node, context, reference);
-            if (!(type instanceof ReferenceType)) {
-                typeCache.set(contextCacheKey, type);
+        try {
+            let typeCache = this.typeCaches.get(node);
+            if (typeCache == null) {
+                typeCache = new Map<string, BaseType>();
+                this.typeCaches.set(node, typeCache);
             }
+            const contextCacheKey = context.getCacheKey();
+            let type = typeCache.get(contextCacheKey);
+            if (!type) {
+                type = this.getNodeParser(node, context).createType(node, context, reference);
+                if (!(type instanceof ReferenceType)) {
+                    typeCache.set(contextCacheKey, type);
+                }
+            }
+            return type;
+        } catch (err) {
+            return new UndefinedType();
         }
-        return type;
     }
 
     protected getNodeParser(node: ts.Node, context: Context): SubNodeParser {

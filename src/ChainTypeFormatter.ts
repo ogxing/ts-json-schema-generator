@@ -3,6 +3,7 @@ import { MutableTypeFormatter } from "./MutableTypeFormatter";
 import { Definition } from "./Schema/Definition";
 import { SubTypeFormatter } from "./SubTypeFormatter";
 import { BaseType } from "./Type/BaseType";
+import { UndefinedType } from "./Type/UndefinedType";
 
 export class ChainTypeFormatter implements SubTypeFormatter, MutableTypeFormatter {
     public constructor(protected typeFormatters: SubTypeFormatter[]) {}
@@ -25,6 +26,13 @@ export class ChainTypeFormatter implements SubTypeFormatter, MutableTypeFormatte
     protected getTypeFormatter(type: BaseType): SubTypeFormatter {
         for (const typeFormatter of this.typeFormatters) {
             if (typeFormatter.supportsType(type)) {
+                return typeFormatter;
+            }
+        }
+
+
+        for (const typeFormatter of this.typeFormatters) {
+            if (typeFormatter.supportsType(new UndefinedType())) {
                 return typeFormatter;
             }
         }
